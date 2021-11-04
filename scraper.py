@@ -1,41 +1,39 @@
 import re
 from urllib.parse import urlparse
 import urllib
-import operator
 from bs4 import BeautifulSoup
+import operator
 
-longest_page = 0
+longest_pagenum = 0
 crawled_alrdy = set()
 wordDict = {}
 content = {}
 longest_page = {}
 
+
 def scraper(url, resp):
     links = extract_next_links(url, resp)
     return [link for link in links if is_valid(link)]
+
 
 def extract_next_links(url, resp):
     hyperlink_list = list()
     words_list = []
     crawled_url = ""
     parsed_url = urlparse(url)
-    domain = "https://" + parsed_url.netloc
 
     # writing urls into .txt files
-    with open("url.txt", "a", encoding="utf-8") as file1, \
-            open("content.txt", "a", encoding="utf-8") as file2, \
+    with open("url.txt", "a", encoding="utf-8") as file1, open("content.txt", "a", encoding="utf-8") as file2, \
             open("longest.txt", "a", encoding="utf-8") as file3:
 
         # checks for valid url and response status
         if is_valid(url):
             if 200 <= resp.status <= 202:
-                if url[-1] == "/":
-                    crawled_url = url[:-1]
-                if crawled_url not in crawled_alrdy:
-                    crawled_alrdy.add(url)
+                if check_crawled(url):
                     html_document = resp.raw_response.content
                     soup_obj = BeautifulSoup(html_document, 'html.parser')
                     answer(url, soup_obj)
+                    file1.write(url + "\n")
                     split_soup = soup_obj.text.split()
 
                     for word in split_soup:
@@ -44,21 +42,20 @@ def extract_next_links(url, resp):
                                 if word != "":
                                     words_list.append(word)
 
-                    file1.write(url + "\n")
+                    longest_page[url] = len(words_list)
                     file2.write(url + "\n" + str(words_list) + "\n")
                     file3.write(url + "\n" + str(longest_page[url]) + "\n")
-                    longest_page[url] = len(words_list)
 
                     for path in soup_obj.find_all('a'):
                         relative = path.get('href')
-                        link = urllib.parse.urljoin(domain, relative)
+                        link = urllib.parse.urljoin("https://" + parsed_url.netloc, relative)
                         frag_tuple = urldefrag(link)[0]
                         hyperlink_list.append(frag_tuple)
                         file1.write(frag_tuple + "\n")
 
-    file1.close()
-    file2.close()
     file3.close()
+    file2.close()
+    file1.close()
     return hyperlink_list
     # Implementation required.
     # url: the URL that was used to get the page
@@ -70,6 +67,15 @@ def extract_next_links(url, resp):
     #         resp.raw_response.content: the content of the page!
     # Return a list with the hyperlinks (as strings) scrapped from resp.raw_response.content
     #return list()
+
+
+def check_crawled(url):
+    if url[-1] == "/":
+	    url = url[:-1]
+    if url not in already_crawled:
+        already_crawled.add(url)
+        return True
+    return False
 
 
 def match_domain(url):
@@ -110,6 +116,7 @@ def match_domain(url):
         if subdomain == domain:
             return True
 
+
 def is_valid(url):
     # Decide whether to crawl this url or not. 
     # If you decide to crawl it, return True; otherwise return False.
@@ -123,19 +130,19 @@ def is_valid(url):
         if not match_domain(parsed):
             return False
 
-        avoid_crawling = ["txt","rkt","svg","json","ss","scm","py",
-                      "wp-content","calendar","ical","img","pdf","war",
-                      "css","js","bmp","gif","jpeg","ico","png","tiff",
-                      "mid","mp2","mp3","mp4","wav","avi","mov","mpeg","ram",
-                      "m4v","mkv","ogg","ogv","pdf","ps","eps","tex","ppt",
-                      "pptx","doc","docx","xls","xlsx","names","data","dat",
-                      "exe","bz2","tar","msi","bin","7z","psd","dmg","iso",
-                      "epub","dll","cnf","tgz","sha1","thmx","mso","arff",
-                      "rtf","jar","csv","rm","smil","wmv","swf","wma","zip",
-                      "rar","gz"]
+        avoid_crawling = ["txt", "rkt", "svg", "json", "ss", "scm", "py",
+                          "wp-content", "calendar", "ical", "img", "pdf", "war",
+                          "css", "js", "bmp", "gif", "jpeg", "ico", "png", "tiff",
+                          "mid", "mp2", "mp3", "mp4", "wav", "avi", "mov", "mpeg", "ram",
+                          "m4v", "mkv", "ogg", "ogv", "pdf", "ps", "eps", "tex", "ppt",
+                          "pptx", "doc", "docx", "xls", "xlsx", "names", "data", "dat",
+                          "exe", "bz2", "tar", "msi", "bin", "7z", "psd", "dmg", "iso",
+                          "epub", "dll", "cnf", "tgz", "sha1", "thmx", "mso", "arff",
+                          "rtf", "jar", "csv", "rm", "smil", "wmv", "swf", "wma", "zip",
+                          "rar", "gz"]
 
         for ext in avoid_crawling:
-            if (ext) in parsed.path or (ext) in parsed.query:
+            if ext in parsed.path or (ext) in parsed.query:
                 return False
 
         return not re.match(
@@ -149,18 +156,21 @@ def is_valid(url):
             + r"|rm|smil|wmv|swf|wma|zip|rar|gz)$", parsed.path.lower())
 
     except TypeError:
-        print ("TypeError for ", parsed)
+        print("TypeError for ", parsed)
         raise
 
+
 def answers(url, html):
-    text = html.get_text().split()
+    global longest_pagenum
     words = []
-    global longest_page
+    text = html.get_text().split()
     for t in text:
-        if t!="" and t.isalnum() and "[]" not in t:
-            words.append(t)
-    if len(words) > longest_page:
-        longest_page = len(words)
+        if t != "":
+            if t.isalnum():
+                if "[]" not in t:
+                    words.append(t)
+    if len(words) > longest_pagenum:
+        longest_pagenum = len(words)
         with open("longest.txt", "w", encoding="utf-8") as file:
             file.write(url+"\n")
             file.write(html.get_text())
