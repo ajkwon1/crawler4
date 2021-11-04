@@ -29,6 +29,8 @@ def extract_next_links(url, resp):
             if resp.status == 200:
                 if url[-1] == "/":
                     new_url = url[:-1]
+                else:
+                    new_url = url
                 if new_url not in crawled_alrdy:
                     crawled_alrdy.add(new_url)
                     html_document = resp.raw_response.content
