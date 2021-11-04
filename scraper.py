@@ -32,7 +32,7 @@ def extract_next_links(url, resp):
                 if check_crawled(url):
                     html_document = resp.raw_response.content
                     soup_obj = BeautifulSoup(html_document, 'html.parser')
-                    answer(url, soup_obj)
+                    answers(url, soup_obj)
                     file1.write(url + "\n")
                     split_soup = soup_obj.text.split()
 
