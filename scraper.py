@@ -1,14 +1,13 @@
 import re
-from urllib.parse import urlparse
 import urllib
-from bs4 import BeautifulSoup
 import operator
+from bs4 import BeautifulSoup
+from urllib.parse import urldefrag, urlparse
 
-longest_pagenum = 0
+
 crawled_alrdy = set()
-wordDict = {}
-content = {}
 longest_page = {}
+longest_pagenum = 0
 
 
 def scraper(url, resp):
@@ -19,20 +18,18 @@ def scraper(url, resp):
 def extract_next_links(url, resp):
     hyperlink_list = list()
     words_list = []
-    crawled_url = ""
     parsed_url = urlparse(url)
 
     # writing urls into .txt files
-    with open("url.txt", "a", encoding="utf-8") as file1, open("content.txt", "a", encoding="utf-8") as file2, \
-            open("longest.txt", "a", encoding="utf-8") as file3:
+    with open("url.txt", "a", encoding="utf-8") as file1, open("longest.txt", "a", encoding="utf-8") as file2, \
+            open("content.txt", "a", encoding="utf-8") as file3:
 
         # checks for valid url and response status
         if is_valid(url):
-            if 200 <= resp.status <= 202:
+            if 199 < resp.status < 203:
                 if check_crawled(url):
                     html_document = resp.raw_response.content
                     soup_obj = BeautifulSoup(html_document, 'html.parser')
-                    answers(url, soup_obj)
                     file1.write(url + "\n")
                     split_soup = soup_obj.text.split()
 
@@ -43,8 +40,8 @@ def extract_next_links(url, resp):
                                     words_list.append(word)
 
                     longest_page[url] = len(words_list)
-                    file2.write(url + "\n" + str(words_list) + "\n")
-                    file3.write(url + "\n" + str(longest_page[url]) + "\n")
+                    file3.write(url + "\n" + str(words_list) + "\n")
+                    file2.write(url + "\n" + str(longest_page[url]) + "\n")
 
                     for path in soup_obj.find_all('a'):
                         relative = path.get('href')
@@ -53,8 +50,8 @@ def extract_next_links(url, resp):
                         hyperlink_list.append(frag_tuple)
                         file1.write(frag_tuple + "\n")
 
-    file3.close()
     file2.close()
+    file3.close()
     file1.close()
     return hyperlink_list
     # Implementation required.
@@ -71,7 +68,7 @@ def extract_next_links(url, resp):
 
 def check_crawled(url):
     if url[-1] == "/":
-	    url = url[:-1]
+        url = url[:-1]
     if url not in crawled_alrdy:
         crawled_alrdy.add(url)
         return True
@@ -158,20 +155,3 @@ def is_valid(url):
     except TypeError:
         print("TypeError for ", parsed)
         raise
-
-
-def answers(url, html):
-    global longest_pagenum
-    words = []
-    text = html.get_text().split()
-    for t in text:
-        if t != "":
-            if t.isalnum():
-                if "[]" not in t:
-                    words.append(t)
-    if len(words) > longest_pagenum:
-        longest_pagenum = len(words)
-        with open("longest.txt", "w", encoding="utf-8") as file:
-            file.write(url+"\n")
-            file.write(html.get_text())
-        file.close()
