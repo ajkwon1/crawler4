@@ -21,27 +21,23 @@ def extract_next_links(url, resp):
     parsed_url = urlparse(url)
 
     # writing urls into .txt files
-    with open("url.txt", "a", encoding="utf-8") as file1, open("longest.txt", "a", encoding="utf-8") as file2, \
-            open("content.txt", "a", encoding="utf-8") as file3:
+    with open("urls.txt", "a", encoding="utf-8") as file1, open("longest.txt", "a", encoding="utf-8") as file2, \
+            open("subdomains.txt", "a", encoding="utf-8") as file3:
 
         # checks for valid url and response status
         if is_valid(url):
-            if 199 < resp.status < 203:
-                if check_crawled(url):
+            if resp.status == 200:
+                if url[-1] == "/":
+                    new_url = url[:-1]
+                if new_url not in crawled_alrdy:
+                    crawled_alrdy.add(new_url)
                     html_document = resp.raw_response.content
                     soup_obj = BeautifulSoup(html_document, 'html.parser')
-                    file1.write(url + "\n")
                     split_soup = soup_obj.text.split()
-
-                    for word in split_soup:
-                        if word.isalnum():
-                            if "[]" not in word:
-                                if word != "":
-                                    words_list.append(word)
-
-                    longest_page[url] = len(words_list)
-                    file3.write(url + "\n" + str(words_list) + "\n")
+                    num_2(url, split_soup)
+                    file1.write(url + "\n")
                     file2.write(url + "\n" + str(longest_page[url]) + "\n")
+                    file3.write(url + "\n" + str(words_list) + "\n")
 
                     for path in soup_obj.find_all('a'):
                         relative = path.get('href')
@@ -64,15 +60,6 @@ def extract_next_links(url, resp):
     #         resp.raw_response.content: the content of the page!
     # Return a list with the hyperlinks (as strings) scrapped from resp.raw_response.content
     #return list()
-
-
-def check_crawled(url):
-    if url[-1] == "/":
-        url = url[:-1]
-    if url not in crawled_alrdy:
-        crawled_alrdy.add(url)
-        return True
-    return False
 
 
 def match_domain(url):
@@ -155,3 +142,13 @@ def is_valid(url):
     except TypeError:
         print("TypeError for ", parsed)
         raise
+
+
+def num_2(url, soup):
+    for word in soup:
+        if word.isalnum():
+            if "[]" not in word:
+                if word != "":
+                    words_list.append(word)
+    longest_page[url] = len(words_list)
+
