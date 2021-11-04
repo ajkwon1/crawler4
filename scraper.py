@@ -72,8 +72,8 @@ def extract_next_links(url, resp):
 def check_crawled(url):
     if url[-1] == "/":
 	    url = url[:-1]
-    if url not in already_crawled:
-        already_crawled.add(url)
+    if url not in crawled_alrdy:
+        crawled_alrdy.add(url)
         return True
     return False
 
