@@ -36,7 +36,12 @@ def extract_next_links(url, resp):
                     html_document = resp.raw_response.content
                     soup_obj = BeautifulSoup(html_document, 'html.parser')
                     split_soup = soup_obj.text.split()
-                    num_2(url, split_soup)
+                    for word in soup:
+                        if word.isalnum():
+                            if "[]" not in word:
+                                if word != "":
+                                    words_list.append(word)
+                    longest_page[url] = len(words_list)
                     file1.write(url + "\n")
                     file2.write(url + "\n" + str(longest_page[url]) + "\n")
                     file3.write(url + "\n" + str(words_list) + "\n")
@@ -145,12 +150,4 @@ def is_valid(url):
         print("TypeError for ", parsed)
         raise
 
-
-def num_2(url, soup):
-    for word in soup:
-        if word.isalnum():
-            if "[]" not in word:
-                if word != "":
-                    words_list.append(word)
-    longest_page[url] = len(words_list)
 
