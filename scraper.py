@@ -36,7 +36,7 @@ def extract_next_links(url, resp):
                     html_document = resp.raw_response.content
                     soup_obj = BeautifulSoup(html_document, 'html.parser')
                     split_soup = soup_obj.text.split()
-                    for word in soup_obj:
+                    for word in split_soup:
                         if word.isalnum():
                             if "[]" not in word:
                                 if word != "":
